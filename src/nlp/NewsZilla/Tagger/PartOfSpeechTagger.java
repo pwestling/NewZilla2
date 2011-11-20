@@ -17,7 +17,7 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 		for (String lhs : ruleProbs.keySet()) {
 			for (ArrayList<String> rhs : ruleProbs.get(lhs).keySet()) {
 				if (isLexical.get(lhs).get(rhs)) {
-					addRuleIfMoreProb(lhs, rhs.get(0));
+					addRuleIfMoreProb(lhs, rhs);
 				}
 			}
 
@@ -26,12 +26,17 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 
 	}
 
-	private void addRuleIfMoreProb(String lhs, String rhs) {
-
+	private void addRuleIfMoreProb(String lhs, ArrayList<String> rhsAL) {
+		String rhs = rhsAL.get(0);
+		System.out.println(ruleProbs.get(lhs).get(rhsAL));
+		System.out.println(partsOfSpeechProbs.get(rhs));
 		if (partsOfSpeech.get(rhs) == null) {
 			partsOfSpeech.put(rhs, lhs);
-			partsOfSpeechProbs.put(rhs, ruleProbs.get(lhs).get(rhs));
-		} else if (ruleProbs.get(lhs).get(rhs) > partsOfSpeechProbs.get(rhs)) {
+		}
+		if (partsOfSpeechProbs.get(rhs) == null) {
+			partsOfSpeechProbs.put(rhs, ruleProbs.get(lhs).get(rhsAL));
+		}
+		if (ruleProbs.get(lhs).get(rhsAL) > partsOfSpeechProbs.get(rhs)) {
 			partsOfSpeech.put(rhs, lhs);
 			partsOfSpeechProbs.put(rhs, ruleProbs.get(lhs).get(rhs));
 		}
