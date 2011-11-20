@@ -28,8 +28,7 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 
 	private void addRuleIfMoreProb(String lhs, ArrayList<String> rhsAL) {
 		String rhs = rhsAL.get(0);
-		System.out.println(ruleProbs.get(lhs).get(rhsAL));
-		System.out.println(partsOfSpeechProbs.get(rhs));
+
 		if (partsOfSpeech.get(rhs) == null) {
 			partsOfSpeech.put(rhs, lhs);
 		}
@@ -53,10 +52,15 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 			PrintWriter pw = new PrintWriter(outputfile);
 			Scanner sc = new Scanner(new File(filename));
 
-			while (sc.hasNext()) {
-				String word = sc.next();
-				pw.print(this.tag(word) + " " + word);
-				System.out.println(this.tag(word) + " " + word);
+			while (sc.hasNextLine()) {
+				Scanner subsc = new Scanner(sc.nextLine());
+				while (subsc.hasNext()) {
+					String word = subsc.next();
+					word = word.toLowerCase();
+					word.replaceAll("[^a-z]", "");
+					pw.print(" (" + this.tag(word) + " " + word + ")");
+				}
+				pw.print("\n");
 
 			}
 			pw.close();
