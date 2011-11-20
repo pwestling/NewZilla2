@@ -57,7 +57,7 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 				while (subsc.hasNext()) {
 					String word = subsc.next();
 					word = word.toLowerCase();
-					word.replaceAll("[^a-z]", "");
+					word = word.replaceAll("[^a-z-<>]", "");
 					pw.print(" (" + this.tag(word) + " " + word + ")");
 				}
 				pw.print("\n");
