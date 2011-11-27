@@ -135,27 +135,15 @@ public class SimilarityMeasurer {
 	 *            The vector similarity measure to employ. Possibilities are
 	 *            "L1" "EUCLIDEAN" and "COSINE"
 	 */
-	public void printSimilarities(String feature, String weighting, String measure) {
-
+	public ArrayList<String> printSimilarities(String feature) {
+		
+		//Create temporary data structure to store the top ten most similar verbs
+			ArrayList<String> topTen = new ArrayList<String>();
 		// Create the appropriate WeightCalculator
-		if (weighting.equals("PMI")) {
 			weighter = new MutualInformationWeighter(this);
-		} else if (weighting.equals("TFIDF")) {
-			weighter = new TFIDFWeighter(this);
-		} else if (weighting.equals("TF")) {
-			weighter = new TermFrequencyWeighter(this);
-		}
 		// create the appropriate VectorSimilarityCalculator and Comparator
-		if (measure.equals("L1")) {
-			measurer = new L1Calculator();
-			pairComparer = new SimilarityPair.EuclideanOrL1Comparator();
-		} else if (measure.equals("EUCLIDEAN")) {
-			measurer = new EuclidianCalculator();
-			pairComparer = new SimilarityPair.EuclideanOrL1Comparator();
-		} else if (measure.equals("COSINE")) {
 			measurer = new CosineCalculator();
 			pairComparer = new SimilarityPair.CosineComparator();
-		}
 
 		// We store and simultaneously sort the calculated similarities in this
 		PriorityQueue<SimilarityPair> similarities = new PriorityQueue<SimilarityPair>(wordCounts.size(), pairComparer);
@@ -173,14 +161,13 @@ public class SimilarityMeasurer {
 
 			}
 		}
-		System.out.println("SIM: " + feature + " " + weighting + " " + measure);
 
 		// Print our top 10 similarities
 		for (int i = 0; i < 10; i++) {
 			SimilarityPair simPair = similarities.remove();
-
-			System.out.println(simPair.getWord() + "\t" + simPair.getSimilarity());
+			topTen.add(simPair.getWord());
 		}
+		return topTen;
 
 	}
 
