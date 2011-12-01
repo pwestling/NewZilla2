@@ -43,7 +43,12 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 	}
 
 	public String tag(String word) {
-		return partsOfSpeech.get(word);
+		String tag = partsOfSpeech.get(word.replaceAll("[\\.'\",\\?!]", ""));
+		if (tag != null) {
+			return tag;
+		} else {
+			return "null";
+		}
 	}
 
 	public void tagFile(String filename, String outputfile) {
