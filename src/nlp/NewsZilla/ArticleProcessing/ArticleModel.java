@@ -11,6 +11,7 @@ import java.util.Scanner;
 
 import nlp.NewsZilla.Subject.SubjectFinder;
 import nlp.NewsZilla.Tagger.PartOfSpeechTagger;
+import nlp.NewsZilla.VerbGram.VerbParser;
 
 public class ArticleModel {
 
@@ -19,6 +20,7 @@ public class ArticleModel {
 	ArrayList<String> wholeArticles = new ArrayList<String>();
 	HashMap<String, ArrayList<String>> sentencesByVerb = new HashMap<String, ArrayList<String>>();
 	GramTree gramRoot = new GramTree("<ROOT>");
+	PartOfSpeechTagger post;
 
 	public ArticleModel(String filename, int gramDepth) {
 		try {
@@ -28,17 +30,14 @@ public class ArticleModel {
 			e.printStackTrace();
 		}
 		System.out.println("Building tree");
+		System.out.println("Building POST");
+		post = new PartOfSpeechTagger("data/simple.parsed");
+		System.out.println("Built POST");
+		
+		VerbParser verbParser = new VerbParser(post, sentencesByVerb, gramDepth);
+		
 		for (ArrayList<String> article : articles) {
-			ArrayList<String> verbs = new ArrayList<String>();
-			for (int i = 0; i < gramDepth - 1; i++) {
-				verbs.add("<START>");
-			}
-			for (String sentence : article) {
-				String verb = "bear"; // insert verb finding here
-				addToHash(sentence, verb);
-				verbs.add(verb);
-			}
-
+			ArrayList<String> verbs = verbParser.getArticleSkeleton(article);
 			for (int i = gramDepth; i < verbs.size(); i++) {
 
 				augementTree(verbs.subList(i - gramDepth, i + 1));
@@ -134,15 +133,8 @@ public class ArticleModel {
 
 	}
 
-	PartOfSpeechTagger post = null;
-
 	private void stripSubjects(String article, String headline, int index) {
 		System.out.println("Stripping subject " + index);
-		if (post == null) {
-			System.out.println("Building POST");
-			post = new PartOfSpeechTagger("data/simple.parsed");
-			System.out.println("Built POST");
-		}
 
 		ArrayList<String> headlineWords = new ArrayList<String>();
 		ArrayList<String> headlineTags = new ArrayList<String>();
