@@ -45,7 +45,46 @@ public class ArticleModel {
 				// calculate prob.
 			}
 		}
+		System.out.println("Computing simple probabilities");
+		computeProbabilities(gramRoot, 1);
+		System.out.println("Probabilities computed");
+		System.out.println("Printing tree");
+		debugPrintTree(gramRoot, "");
+		System.out.println("Printed tree");
+		pw.close();
 		System.out.println("Built tree");
+
+	}
+
+	private void computeProbabilities(GramTree root, double parentCount) {
+		root.setProb(root.getCount() / parentCount);
+		for (GramTree child : root.getChildren()) {
+			computeProbabilities(child, root.getCount());
+		}
+	}
+
+	private void debugPrintTree(GramTree root, String tabs) {
+		debugPrint(tabs + root.getWord());
+
+		debugPrint("\t" + root.getProb());
+
+		debugPrint("\n");
+		for (GramTree child : root.getChildren()) {
+			debugPrintTree(child, tabs + "\t");
+		}
+	}
+
+	PrintWriter pw = null;
+
+	public void debugPrint(String s) {
+		if (pw == null) {
+			try {
+				pw = new PrintWriter("debug.txt");
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		pw.print(s);
 
 	}
 
@@ -106,30 +145,12 @@ public class ArticleModel {
 		for (String article : wholeArticles) {
 			articles.add(breakIntoSentences(article));
 		}
-		for (ArrayList<String> article : articles) {
-			debugPrint("Article:\n");
-			for (String sentence : article) {
-				debugPrint(sentence);
-			}
-			debugPrint("\n");
-
-		}
-		debugPrint(articles.toString());
-		pw.close();
-
-	}
-
-	PrintWriter pw = null;
-
-	public void debugPrint(String s) {
-		if (pw == null) {
-			try {
-				pw = new PrintWriter("debug.txt");
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
-		pw.println(s);
+		// for (ArrayList<String> article : articles) {
+		// for (String sentence : article) {
+		// debugPrint(sentence);
+		// }
+		//
+		// }
 
 	}
 
