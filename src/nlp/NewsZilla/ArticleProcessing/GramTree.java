@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 public class GramTree {
 
-	String word;
-	ArrayList<GramTree> children = new ArrayList<GramTree>();
-	Integer count = 0;
-	Double prob = 0.0;
+	private String word;
+	private ArrayList<GramTree> children = new ArrayList<GramTree>();
+	private Integer count = 0;
+	private Double prob = 0.0;
 
 	public GramTree(String word) {
 		this.word = word;
