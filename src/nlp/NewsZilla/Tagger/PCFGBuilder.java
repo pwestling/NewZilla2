@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -18,10 +19,14 @@ import java.util.Map.Entry;
  * @author Alex and Porter
  * 
  */
-public class PCFGBuilder {
+public class PCFGBuilder implements Serializable {
 
 	// Members:
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	// counts the occurrences of a rule, hashed first by left hand side than
 	// right hand side
 	protected HashMap<String, HashMap<ArrayList<String>, Double>> ruleOccurrences = new HashMap<String, HashMap<ArrayList<String>, Double>>();

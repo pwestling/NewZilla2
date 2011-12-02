@@ -23,6 +23,9 @@ public class ArticleModel {
 	PartOfSpeechTagger post;
 
 	public ArticleModel(String filename, int gramDepth) {
+		System.out.println("Building POST");
+		post = PartOfSpeechTagger.makePOST("data/simple.parsed");
+		System.out.println("Built POST");
 		try {
 			breakUpArticles(filename);
 
@@ -30,12 +33,9 @@ public class ArticleModel {
 			e.printStackTrace();
 		}
 		System.out.println("Building tree");
-		System.out.println("Building POST");
-		post = new PartOfSpeechTagger("data/simple.parsed");
-		System.out.println("Built POST");
-		
+
 		VerbParser verbParser = new VerbParser(post, sentencesByVerb, gramDepth);
-		
+
 		for (ArrayList<String> article : articles) {
 			ArrayList<String> verbs = verbParser.getArticleSkeleton(article);
 			for (int i = gramDepth; i < verbs.size(); i++) {
@@ -93,7 +93,7 @@ public class ArticleModel {
 			}
 			wholeArticles.add(sb.toString());
 			sb = new StringBuilder();
-			System.out.println("Processed article " + wholeArticles.size());
+			// System.out.println("Processed article " + wholeArticles.size());
 
 		}
 
@@ -134,7 +134,7 @@ public class ArticleModel {
 	}
 
 	private void stripSubjects(String article, String headline, int index) {
-		System.out.println("Stripping subject " + index);
+		// System.out.println("Stripping subject " + index);
 
 		ArrayList<String> headlineWords = new ArrayList<String>();
 		ArrayList<String> headlineTags = new ArrayList<String>();
@@ -142,10 +142,10 @@ public class ArticleModel {
 			headlineWords.add(word);
 			headlineTags.add(post.tag(word));
 		}
-		System.out.println("Tagged headline");
+		// System.out.println("Tagged headline");
 		SubjectFinder sf = new SubjectFinder();
 		String subject = sf.getSubject(headlineWords, headlineTags);
-		System.out.println("got subject");
+		// System.out.println("got subject");
 		String[] articleSplit = article.split("\\s+");
 
 		wholeArticles.set(index, removeSubjectClusters(subject, articleSplit));

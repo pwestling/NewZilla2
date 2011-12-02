@@ -1,6 +1,10 @@
 package nlp.NewsZilla.Tagger;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,11 +12,47 @@ import java.util.Scanner;
 
 public class PartOfSpeechTagger extends PCFGBuilder {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	HashMap<String, String> partsOfSpeech = new HashMap<String, String>();
 	HashMap<String, Double> partsOfSpeechProbs = new HashMap<String, Double>();
 
-	public PartOfSpeechTagger(String filename) {
+	public static PartOfSpeechTagger makePOST(String filename) {
+		File storedPOST = new File("post.serial");
+		System.out.println("Serial File exists? " + storedPOST.exists());
+		if (storedPOST.exists()) {
+			try {
+				FileInputStream fi = new FileInputStream(storedPOST);
+				ObjectInputStream os = new ObjectInputStream(fi);
+				PartOfSpeechTagger post = (PartOfSpeechTagger) os.readObject();
+				return post;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			PartOfSpeechTagger post = new PartOfSpeechTagger(filename);
+
+			System.out.println("Writing serial");
+			try {
+				FileOutputStream fo = new FileOutputStream(storedPOST);
+				ObjectOutputStream os = new ObjectOutputStream(fo);
+				os.writeObject(post);
+				os.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			System.out.println("Wrote serial");
+
+			return post;
+		}
+		return null;
+	}
+
+	private PartOfSpeechTagger(String filename) {
 		super(filename);
+
 		System.out.println("starting POST");
 		for (String lhs : ruleProbs.keySet()) {
 			for (ArrayList<String> rhs : ruleProbs.get(lhs).keySet()) {
@@ -22,6 +62,13 @@ public class PartOfSpeechTagger extends PCFGBuilder {
 			}
 
 		}
+		leftHandSideOccurrences = null;
+		partsOfSpeechProbs = null;
+		ruleOccurrences = null;
+		ruleProbs = null;
+		isLexical = null;
+		ruleSet = null;
+
 		System.out.println("Done training");
 
 	}
