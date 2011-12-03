@@ -1,8 +1,20 @@
 package nlp.NewsZilla.Subject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import nlp.NewsZilla.Tagger.PartOfSpeechTagger;
 
 public class SubjectFinder {
+
+	public String getSubject(String sentence, PartOfSpeechTagger post) {
+		ArrayList<String> words = new ArrayList<String>(Arrays.asList(sentence.split("\\s+")));
+		ArrayList<String> tags = new ArrayList<String>();
+		for (String word : words) {
+			tags.add(post.tag(word));
+		}
+		return getSubject(words, tags);
+	}
 
 	public String getSubject(String taggedHeadline) {
 

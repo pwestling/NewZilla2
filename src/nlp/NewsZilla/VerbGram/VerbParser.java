@@ -3,7 +3,6 @@ package nlp.NewsZilla.VerbGram;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
@@ -11,27 +10,28 @@ import nlp.NewsZilla.Tagger.PartOfSpeechTagger;
 
 /**
  * Given a parsed article as an ArrayList<Entry<String, String>> the
- * getArticleSkeleton method of this class returns the 'verb skeleton'
- * of the article as an ArrayList<Entry<String, String>>.
+ * getArticleSkeleton method of this class returns the 'verb skeleton' of the
+ * article as an ArrayList<Entry<String, String>>.
+ * 
  * @author Armaan
- *
+ * 
  */
 public class VerbParser {
-	
 
 	PartOfSpeechTagger post;
 	HashMap<String, ArrayList<String>> sentencesByVerb;
 	int gramDepth;
-	
+
 	public VerbParser(PartOfSpeechTagger post, HashMap<String, ArrayList<String>> sentencesByVerb, int gramDepth) {
 		this.post = post;
 		this.sentencesByVerb = sentencesByVerb;
 		this.gramDepth = gramDepth;
 	}
-	
+
 	/**
 	 * Takes a parsed article, finds the 'main' verb for each sentence and
 	 * returns the 'verb skeleton'
+	 * 
 	 * @param article
 	 * @return
 	 */
@@ -43,12 +43,15 @@ public class VerbParser {
 		for (String sentence : article) {
 			verbSkeleton.add(getMainVerb(sentence));
 		}
+
+		verbSkeleton.add("<END>");
+
 		return verbSkeleton;
 	}
-	
+
 	/**
-	 * Gets the main verb in a given sentence
-	 * and hashes it by that verb.
+	 * Gets the main verb in a given sentence and hashes it by that verb.
+	 * 
 	 * @param sentence
 	 * @return
 	 */

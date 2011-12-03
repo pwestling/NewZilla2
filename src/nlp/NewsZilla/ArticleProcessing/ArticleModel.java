@@ -7,11 +7,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import nlp.NewsZilla.Subject.SubjectFinder;
 import nlp.NewsZilla.Tagger.PartOfSpeechTagger;
 import nlp.NewsZilla.VerbGram.VerbParser;
+import nlp.similarity.CosineCalculator;
+import nlp.similarity.Vector;
+import nlp.similarity.VectorSimilarityCalculator;
 
 public class ArticleModel {
 
@@ -21,8 +25,12 @@ public class ArticleModel {
 	HashMap<String, ArrayList<String>> sentencesByVerb = new HashMap<String, ArrayList<String>>();
 	GramTree gramRoot = new GramTree("<ROOT>");
 	PartOfSpeechTagger post;
+	int gramDepth;
+	SubjectFinder sf = new SubjectFinder();
+	Random rand = new Random();
 
 	public ArticleModel(String filename, int gramDepth) {
+		this.gramDepth = gramDepth;
 		System.out.println("Building POST");
 		post = PartOfSpeechTagger.makePOST("data/simple.parsed");
 		System.out.println("Built POST");
@@ -49,10 +57,106 @@ public class ArticleModel {
 		computeProbabilities(gramRoot, 1);
 		System.out.println("Probabilities computed");
 		System.out.println("Printing tree");
-		debugPrintTree(gramRoot, "");
+		// debugPrintTree(gramRoot, "");
 		System.out.println("Printed tree");
 		pw.close();
 		System.out.println("Built tree");
+
+	}
+
+	public String makeArticle(String subject, String verb) {
+
+		if (!gramRoot.hasChild(verb)) {
+			System.out.println("Verb " + verb + " not in data");
+			return "";
+		}
+
+		ArrayList<String> verbs = new ArrayList<String>();
+		for (int i = 0; i < gramDepth - 1; i++) {
+			verbs.add("<START>");
+		}
+
+		String nextVerb = verb;
+		while (!nextVerb.equals("<END>") && (verbs.size() - gramDepth) < 7) {
+			verbs.add(nextVerb);
+
+			List<String> gram = verbs.subList(verbs.size() - gramDepth, verbs.size());
+			GramTree curNode = gramRoot;
+			for (int i = 0; i < gram.size(); i++) {
+				curNode = curNode.getChild(gram.get(i));
+				if (curNode == null) {
+					System.out.println(gram);
+					return "";
+				}
+			}
+			ArrayList<GramTree> children = curNode.getChildren();
+			Double r = Math.random();
+			Double probSum = children.get(0).getProb();
+			String thisVerb = children.get(0).getWord();
+
+			for (int i = 1; i < children.size() && r >= probSum; i++) {
+				thisVerb = children.get(i).getWord();
+				probSum += children.get(i).getProb();
+			}
+			nextVerb = thisVerb;
+
+		}
+
+		StringBuilder sb = new StringBuilder();
+		ArrayList<String> choosenSentences = new ArrayList<String>();
+
+		Double addSubjects = 1.0;
+		for (String currentVerb : verbs) {
+			if (!currentVerb.equals("<START>")) {
+				ArrayList<String> sentences = sentencesByVerb.get(currentVerb);
+				String sentence = getNextSentence(choosenSentences, sentences);
+				System.out.println("Sentence picked was: " + sentence);
+				if (!sentence.contains("<SUBJECT>")) {
+
+					if (rand.nextDouble() < addSubjects) {
+
+						String thisSubject = sf.getSubject(sentence, post);
+						sentence = removeSubjectClusters(thisSubject, sentence.split("\\s+"));
+						addSubjects = -1.0;
+					}
+
+				}
+				choosenSentences.add(sentence);
+			}
+		}
+		for (String s : choosenSentences) {
+			sb.append(s + "\n");
+		}
+
+		return sb.toString().replaceAll("<SUBJECT>", subject);
+	}
+
+	private String getNextSentence(ArrayList<String> choosenSentences, ArrayList<String> sentences) {
+		if (choosenSentences.size() >= 1) {
+			String previousSentence = choosenSentences.get(choosenSentences.size() - 1);
+
+			Vector previousSentenceVec = Vector.makeVector(previousSentence);
+
+			Double bestSim = 9999.9;
+			String bestSentence = "This sentence is AWESOME!!!!!!";
+			for (String sentence : sentences) {
+
+				Vector sentenceVec = Vector.makeVector(sentence);
+
+				VectorSimilarityCalculator vSim = new CosineCalculator();
+
+				Double sim = vSim.vectorSimilarity(previousSentenceVec, sentenceVec);
+				if (sim < bestSim) {
+					bestSim = sim;
+					bestSentence = sentence;
+				}
+
+			}
+
+			return bestSentence;
+		} else {
+			return sentences.get(rand.nextInt(sentences.size()));
+		}
 
 	}
 
@@ -99,14 +203,6 @@ public class ArticleModel {
 		}
 	}
 
-	private void addToHash(String sentence, String verb) {
-		if (!sentencesByVerb.containsKey(verb)) {
-			sentencesByVerb.put(verb, new ArrayList<String>());
-		}
-		sentencesByVerb.get(verb).add(sentence);
-
-	}
-
 	private void breakUpArticles(String filename) throws FileNotFoundException {
 
 		Scanner sc = new Scanner(new File(filename));
@@ -145,27 +241,24 @@ public class ArticleModel {
 		for (String article : wholeArticles) {
 			articles.add(breakIntoSentences(article));
 		}
-		// for (ArrayList<String> article : articles) {
-		// for (String sentence : article) {
-		// debugPrint(sentence);
-		// }
-		//
-		// }
+		for (ArrayList<String> article : articles) {
+			for (String sentence : article) {
+				if (sentence.contains("<SUBJECT>")) {
+					debugPrint(sentence);
+					debugPrint("\n");
+				}
+			}
+
+		}
 
 	}
 
 	private void stripSubjects(String article, String headline, int index) {
 		// System.out.println("Stripping subject " + index);
 
-		ArrayList<String> headlineWords = new ArrayList<String>();
-		ArrayList<String> headlineTags = new ArrayList<String>();
-		for (String word : headline.split("\\s+")) {
-			headlineWords.add(word);
-			headlineTags.add(post.tag(word));
-		}
 		// System.out.println("Tagged headline");
-		SubjectFinder sf = new SubjectFinder();
-		String subject = sf.getSubject(headlineWords, headlineTags);
+
+		String subject = sf.getSubject(headline);
 		// System.out.println("got subject");
 		String[] articleSplit = article.split("\\s+");
 
@@ -176,7 +269,8 @@ public class ArticleModel {
 	}
 
 	private ArrayList<String> breakIntoSentences(String article) {
-		return new ArrayList<String>(Arrays.asList(article.split("(?<=\\?)|(?<=\\!)|(?<=(\\. ))|(?<=(\\.''))|(?<=;)")));
+		return new ArrayList<String>(Arrays.asList(article
+				.split("((?<=\\?)|(?<=\\!)|(?<=([^A-Z]\\. ))|(?<=([^A-Z]\\.''))|(?<=;))")));
 
 	}
 

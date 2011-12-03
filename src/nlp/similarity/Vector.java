@@ -50,4 +50,22 @@ public class Vector extends HashMap<String, Double> {
 		return d == null ? 0 : d;
 	}
 
+	public static Vector makeVector(String sentence) {
+		HashMap<String, Double> map = new HashMap<String, Double>();
+
+		String[] split = sentence.split("\\s+");
+		for (String s : split) {
+			if (!map.containsKey(s)) {
+
+				map.put(s, 0.0);
+
+			}
+
+			map.put(s, map.get(s) + 1);
+		}
+
+		return new Vector(map);
+
+	}
+
 }
