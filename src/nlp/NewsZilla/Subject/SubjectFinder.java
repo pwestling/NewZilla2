@@ -1,17 +1,11 @@
 package nlp.NewsZilla.Subject;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import nlp.NewsZilla.Tagger.PartOfSpeechTagger;
 
-public class SubjectFinder implements Serializable {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class SubjectFinder {
 
 	public String getSubject(String sentence, PartOfSpeechTagger post) {
 		ArrayList<String> words = new ArrayList<String>(Arrays.asList(sentence.split("\\s+")));

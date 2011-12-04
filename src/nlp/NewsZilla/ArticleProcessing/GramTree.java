@@ -1,35 +1,16 @@
 package nlp.NewsZilla.ArticleProcessing;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
-public class GramTree implements Serializable {
+public class GramTree {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 	private String word;
 	private ArrayList<GramTree> children = new ArrayList<GramTree>();
 	private Integer count = 0;
 	private Double prob = 0.0;
-	private GramTree parent = null;
-
-	public GramTree getParent() {
-		return parent;
-	}
-
-	public void setParent(GramTree parent) {
-		this.parent = parent;
-	}
 
 	public GramTree(String word) {
 		this.word = word;
-	}
-
-	public GramTree(String word, GramTree parent) {
-		this(word);
-		this.setParent(parent);
 	}
 
 	public void incrementCount() {
