@@ -3,6 +3,7 @@ package nlp.similarity;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -18,8 +19,12 @@ import java.util.PriorityQueue;
  * @author Porter and Alex
  * 
  */
-public class SimilarityMeasurer {
+public class SimilarityMeasurer implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	/**
 	 * The documents in the corpus, stored by document then by word
 	 */
@@ -88,10 +93,6 @@ public class SimilarityMeasurer {
 
 		}
 		// Print out our stats
-		System.out.println(wordCounts.size() + " unique words");
-		System.out.println(totalWordCount + " word occurences");
-		System.out.println(documents.size() + " sentences/lines/documents");
-		System.out.println();
 
 	}
 
@@ -135,18 +136,19 @@ public class SimilarityMeasurer {
 	 *            The vector similarity measure to employ. Possibilities are
 	 *            "L1" "EUCLIDEAN" and "COSINE"
 	 */
-	public ArrayList<String> printSimilarities(String feature) {
-		
-		//Create temporary data structure to store the top ten most similar verbs
-			ArrayList<String> topTen = new ArrayList<String>();
+	public ArrayList<String> getSimilarities(String feature) {
+
+		// Create temporary data structure to store the top ten most similar
+		// verbs
+		ArrayList<String> topTen = new ArrayList<String>();
 		// Create the appropriate WeightCalculator
-			weighter = new MutualInformationWeighter(this);
+		weighter = new MutualInformationWeighter(this);
 		// create the appropriate VectorSimilarityCalculator and Comparator
-			measurer = new CosineCalculator();
-			pairComparer = new SimilarityPair.CosineComparator();
+		measurer = new CosineCalculator();
+		pairComparer = new SimilarityPair.CosineComparator();
 
 		// We store and simultaneously sort the calculated similarities in this
-		PriorityQueue<SimilarityPair> similarities = new PriorityQueue<SimilarityPair>(wordCounts.size(), pairComparer);
+		PriorityQueue<SimilarityPair> similarities = new PriorityQueue<SimilarityPair>(10, pairComparer);
 		// reset featureVec to make sure it gets recalculated for the new word
 		featureVec = null;
 
@@ -163,7 +165,7 @@ public class SimilarityMeasurer {
 		}
 
 		// Print our top 10 similarities
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 10 && !similarities.isEmpty(); i++) {
 			SimilarityPair simPair = similarities.remove();
 			topTen.add(simPair.getWord());
 		}
