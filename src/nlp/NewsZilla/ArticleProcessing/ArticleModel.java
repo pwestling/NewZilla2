@@ -2,7 +2,9 @@ package nlp.NewsZilla.ArticleProcessing;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,11 +16,16 @@ import nlp.NewsZilla.Subject.SubjectFinder;
 import nlp.NewsZilla.Tagger.PartOfSpeechTagger;
 import nlp.NewsZilla.VerbGram.VerbParser;
 import nlp.similarity.CosineCalculator;
+import nlp.similarity.SimilarityMeasurer;
 import nlp.similarity.Vector;
 import nlp.similarity.VectorSimilarityCalculator;
 
-public class ArticleModel {
+public class ArticleModel implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	ArrayList<String> headlines = new ArrayList<String>();
 	ArrayList<ArrayList<String>> articles = new ArrayList<ArrayList<String>>();
 	ArrayList<String> wholeArticles = new ArrayList<String>();
@@ -28,6 +35,21 @@ public class ArticleModel {
 	int gramDepth;
 	SubjectFinder sf = new SubjectFinder();
 	Random rand = new Random();
+	SimilarityMeasurer simMeasurer = new SimilarityMeasurer("data/simple.parsed", "data/stoplist");
+
+	public static ArticleModel makeArticleModelFromSerial(URL storedModel) throws FileNotFoundException {
+
+		try {
+			ObjectInputStream os = new ObjectInputStream(storedModel.openStream());
+			ArticleModel model = (ArticleModel) os.readObject();
+			return model;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		throw new FileNotFoundException(storedModel.getFile());
+
+	}
 
 	public ArticleModel(String filename, int gramDepth) {
 		this.gramDepth = gramDepth;
@@ -59,16 +81,24 @@ public class ArticleModel {
 		System.out.println("Printing tree");
 		// debugPrintTree(gramRoot, "");
 		System.out.println("Printed tree");
-		pw.close();
+		// pw.close();
 		System.out.println("Built tree");
+		wholeArticles = null;
+		articles = null;
+		headlines = null;
 
 	}
 
 	public String makeArticle(String subject, String verb) {
 
 		if (!gramRoot.hasChild(verb)) {
-			System.out.println("Verb " + verb + " not in data");
-			return "";
+			System.out.println("Going to find a new verb for " + verb);
+			String oldVerb = verb;
+			verb = getNewVerb(verb);
+			if (verb == null) {
+				System.out.println("Could not find a verb that is similar to " + oldVerb);
+				return "";
+			}
 		}
 
 		ArrayList<String> verbs = new ArrayList<String>();
@@ -81,13 +111,19 @@ public class ArticleModel {
 			verbs.add(nextVerb);
 
 			List<String> gram = verbs.subList(verbs.size() - gramDepth, verbs.size());
-			GramTree curNode = gramRoot;
-			for (int i = 0; i < gram.size(); i++) {
-				curNode = curNode.getChild(gram.get(i));
-				if (curNode == null) {
+			GramTree curNode = null;
+			int backoff = 0;
+			while (curNode == null) {
+				curNode = gramRoot;
+				for (int i = 0 + backoff; i < gram.size(); i++) {
+					curNode = curNode.getChild(gram.get(i));
+					if (curNode == null) {
+						break;
+					}
 					System.out.println(gram);
-					return "";
+
 				}
+				backoff++;
 			}
 			ArrayList<GramTree> children = curNode.getChildren();
 			Double r = Math.random();
@@ -110,7 +146,6 @@ public class ArticleModel {
 			if (!currentVerb.equals("<START>")) {
 				ArrayList<String> sentences = sentencesByVerb.get(currentVerb);
 				String sentence = getNextSentence(choosenSentences, sentences);
-				System.out.println("Sentence picked was: " + sentence);
 				if (!sentence.contains("<SUBJECT>")) {
 
 					if (rand.nextDouble() < addSubjects) {
@@ -129,6 +164,16 @@ public class ArticleModel {
 		}
 
 		return sb.toString().replaceAll("<SUBJECT>", subject);
+	}
+
+	private String getNewVerb(String verb) {
+		ArrayList<String> candidateVerbs = simMeasurer.getSimilarities(verb);
+		for (String v : candidateVerbs) {
+			if (sentencesByVerb.containsKey(v))
+				return v;
+		}
+		return null;
+
 	}
 
 	private String getNextSentence(ArrayList<String> choosenSentences, ArrayList<String> sentences) {
@@ -167,36 +212,36 @@ public class ArticleModel {
 		}
 	}
 
-	private void debugPrintTree(GramTree root, String tabs) {
-		debugPrint(tabs + root.getWord());
+	// private void debugPrintTree(GramTree root, String tabs) {
+	// debugPrint(tabs + root.getWord());
+	//
+	// debugPrint("\t" + root.getProb());
+	//
+	// debugPrint("\n");
+	// for (GramTree child : root.getChildren()) {
+	// debugPrintTree(child, tabs + "\t");
+	// }
+	// }
 
-		debugPrint("\t" + root.getProb());
-
-		debugPrint("\n");
-		for (GramTree child : root.getChildren()) {
-			debugPrintTree(child, tabs + "\t");
-		}
-	}
-
-	PrintWriter pw = null;
-
-	public void debugPrint(String s) {
-		if (pw == null) {
-			try {
-				pw = new PrintWriter("debug.txt");
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
-		pw.print(s);
-
-	}
+	// PrintWriter pw = null;
+	//
+	// public void debugPrint(String s) {
+	// if (pw == null) {
+	// try {
+	// pw = new PrintWriter("debug.txt");
+	// } catch (FileNotFoundException e) {
+	// e.printStackTrace();
+	// }
+	// }
+	// pw.print(s);
+	//
+	// }
 
 	private void augementTree(List<String> verbs) {
 		GramTree root = gramRoot;
 		for (String verb : verbs) {
 			if (!root.hasChild(verb)) {
-				root.addChild(new GramTree(verb));
+				root.addChild(new GramTree(verb, root));
 			}
 			root = root.getChild(verb);
 			root.incrementCount();
@@ -241,15 +286,15 @@ public class ArticleModel {
 		for (String article : wholeArticles) {
 			articles.add(breakIntoSentences(article));
 		}
-		for (ArrayList<String> article : articles) {
-			for (String sentence : article) {
-				if (sentence.contains("<SUBJECT>")) {
-					debugPrint(sentence);
-					debugPrint("\n");
-				}
-			}
-
-		}
+		// for (ArrayList<String> article : articles) {
+		// for (String sentence : article) {
+		// if (sentence.contains("<SUBJECT>")) {
+		// debugPrint(sentence);
+		// debugPrint("\n");
+		// }
+		// }
+		//
+		// }
 
 	}
 
