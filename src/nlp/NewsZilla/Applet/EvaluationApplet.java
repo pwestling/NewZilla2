@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -67,7 +68,7 @@ public class EvaluationApplet extends Applet implements ActionListener {
 
 		article = new JTextArea("Article will appear here");
 		this.add(article, BorderLayout.CENTER);
-
+		article.setLineWrap(true);
 		JPanel evalPanel = new JPanel(new GridLayout(5, 1));
 
 		funnyButton = new OneThroughFiveRadio("Humor");
@@ -102,19 +103,23 @@ public class EvaluationApplet extends Applet implements ActionListener {
 		if (e.getSource() == evalButton && !evalSubmitted) {
 
 			StringBuilder sb = new StringBuilder();
-			sb.append("eval=<EVAL>");
-			sb.append("<ARTICLE>" + article.getText() + "<ARTICLE>");
-			sb.append("<GRADE>" + funnyButton.getSelection() + "" + cohesionButton.getSelection() + ""
-					+ qualityButton.getSelection() + "<GRADE>");
-			sb.append("<COMMENT>" + comments.getText() + "<COMMENT>");
-			sb.append("<EVAL>");
+			sb.append("<EVAL>\n");
+			sb.append("<ARTICLE>\n" + article.getText() + "\n</ARTICLE>\n");
+			sb.append("<GRADE>\n" + funnyButton.getSelection() + "\n" + cohesionButton.getSelection() + "\n"
+					+ qualityButton.getSelection() + "\n</GRADE>\n");
+			sb.append("<COMMENT>\n" + comments.getText() + "\n</COMMENT>\n");
+			sb.append("\n</EVAL>\n");
 
 			try {
-				URL evalScript = new URL(basinRoot + "eval.php?" + URLEncoder.encode(sb.toString(), "UTF-8"));
+				URL evalScript = new URL(basinRoot + "eval.php?eval=" + URLEncoder.encode(sb.toString(), "UTF-8"));
 				System.out.println(evalScript.toString());
 				URLConnection conn = evalScript.openConnection();
 				// conn.setRequestProperty("Accept-Charset", "UTF-8");
-				conn.connect();
+				InputStream inputStream = conn.getInputStream();
+				while (inputStream.available() > 0) {
+					System.out.print(inputStream.read());
+				}
+				System.out.println();
 
 			} catch (Exception e3) {
 				e3.printStackTrace();

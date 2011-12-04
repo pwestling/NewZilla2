@@ -34,7 +34,7 @@ public class ArticleModel implements Serializable {
 	PartOfSpeechTagger post;
 	int gramDepth;
 	SubjectFinder sf = new SubjectFinder();
-	Random rand = new Random();
+	Random rand = new Random(System.currentTimeMillis());
 	SimilarityMeasurer simMeasurer = new SimilarityMeasurer("data/simple.parsed", "data/stoplist");
 
 	public static ArticleModel makeArticleModelFromSerial(URL storedModel) throws FileNotFoundException {
@@ -42,6 +42,7 @@ public class ArticleModel implements Serializable {
 		try {
 			ObjectInputStream os = new ObjectInputStream(storedModel.openStream());
 			ArticleModel model = (ArticleModel) os.readObject();
+			model.setRandom();
 			return model;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -49,6 +50,10 @@ public class ArticleModel implements Serializable {
 
 		throw new FileNotFoundException(storedModel.getFile());
 
+	}
+
+	public void setRandom() {
+		rand = new Random(System.currentTimeMillis());
 	}
 
 	public ArticleModel(String filename, int gramDepth) {
