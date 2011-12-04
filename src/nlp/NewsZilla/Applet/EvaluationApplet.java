@@ -6,6 +6,8 @@ import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -23,7 +25,7 @@ import javax.swing.JTextField;
 
 import nlp.NewsZilla.ArticleProcessing.ArticleModel;
 
-public class EvaluationApplet extends Applet implements ActionListener {
+public class EvaluationApplet extends Applet implements ActionListener, FocusListener {
 
 	ArticleModel model;
 
@@ -57,7 +59,7 @@ public class EvaluationApplet extends Applet implements ActionListener {
 			e.printStackTrace();
 		}
 		JPanel submitPanel = new JPanel();
-		subject = new JTextField("Subject");
+		subject = new JTextField("Subject1");
 		verb = new JTextField("Verb");
 		submitButton = new JButton("Submit");
 		submitButton.addActionListener(this);
@@ -88,6 +90,10 @@ public class EvaluationApplet extends Applet implements ActionListener {
 		evalPanel.add(flowPanel);
 		this.add(evalPanel, BorderLayout.SOUTH);
 
+		subject.addFocusListener(this);
+		verb.addFocusListener(this);
+		comments.addFocusListener(this);
+
 	}
 
 	boolean evalSubmitted = true;
@@ -96,6 +102,9 @@ public class EvaluationApplet extends Applet implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == submitButton) {
 			String art = model.makeArticle(subject.getText(), verb.getText());
+			if (art.equals("")) {
+				art = "Your verb was not in our database. Please try again.";
+			}
 			article.setText(art);
 			evalSubmitted = false;
 		}
@@ -114,7 +123,6 @@ public class EvaluationApplet extends Applet implements ActionListener {
 				URL evalScript = new URL(basinRoot + "eval.php?eval=" + URLEncoder.encode(sb.toString(), "UTF-8"));
 				System.out.println(evalScript.toString());
 				URLConnection conn = evalScript.openConnection();
-				// conn.setRequestProperty("Accept-Charset", "UTF-8");
 				InputStream inputStream = conn.getInputStream();
 				while (inputStream.available() > 0) {
 					System.out.print(inputStream.read());
@@ -125,7 +133,7 @@ public class EvaluationApplet extends Applet implements ActionListener {
 				e3.printStackTrace();
 			}
 
-			comments.setText("");
+			comments.setText("Eval Submitted! Thanks!");
 			evalSubmitted = true;
 
 		}
@@ -159,6 +167,34 @@ public class EvaluationApplet extends Applet implements ActionListener {
 			}
 			return 0;
 		}
+
+	}
+
+	@Override
+	public void focusGained(FocusEvent e) {
+		if (e.getSource() == subject && subject.getText().equals("Subject1")) {
+			subject.setText("Subject");
+			return;
+		}
+		if (e.getSource() == subject && subject.getText().equals("Subject")) {
+			subject.setText("");
+			return;
+		}
+		if (e.getSource() == verb && verb.getText().equals("Verb")) {
+			verb.setText("");
+			return;
+		}
+		if (e.getSource() == comments
+				&& (comments.getText().equals("Any Comments?") || comments.getText().equals("Eval Submitted! Thanks!"))) {
+			comments.setText("");
+			return;
+		}
+
+	}
+
+	@Override
+	public void focusLost(FocusEvent arg0) {
+		// TODO Auto-generated method stub
 
 	}
 
