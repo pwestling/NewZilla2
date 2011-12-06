@@ -1,6 +1,8 @@
 package nlp.NewsZilla.Tagger;
-import java.util.*;
-import java.util.regex.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A class representing a PCFG Grammar rule, that is:
