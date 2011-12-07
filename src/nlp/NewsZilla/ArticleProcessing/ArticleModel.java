@@ -26,16 +26,17 @@ public class ArticleModel implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	ArrayList<String> headlines = new ArrayList<String>();
-	ArrayList<ArrayList<String>> articles = new ArrayList<ArrayList<String>>();
+	public ArrayList<String> headlines = new ArrayList<String>();
+	public ArrayList<ArrayList<String>> articles = new ArrayList<ArrayList<String>>();
 	ArrayList<String> wholeArticles = new ArrayList<String>();
 	HashMap<String, ArrayList<String>> sentencesByVerb = new HashMap<String, ArrayList<String>>();
 	GramTree gramRoot = new GramTree("<ROOT>");
-	PartOfSpeechTagger post;
+	public PartOfSpeechTagger post;
 	int gramDepth;
 	SubjectFinder sf = new SubjectFinder();
 	Random rand = new Random(System.currentTimeMillis());
-	SimilarityMeasurer simMeasurer = new SimilarityMeasurer("data/simple.parsed", "data/stoplist");
+	public SimilarityMeasurer simMeasurer = new SimilarityMeasurer("data/simple.parsed", "data/stoplist");
+	public VerbParser verbParser;
 
 	public static ArticleModel makeArticleModelFromSerial(URL storedModel) throws FileNotFoundException {
 
@@ -57,6 +58,7 @@ public class ArticleModel implements Serializable {
 	}
 
 	public ArticleModel(String filename, int gramDepth) {
+		System.out.println("new article model");
 		this.gramDepth = gramDepth;
 		System.out.println("Building POST");
 		post = PartOfSpeechTagger.makePOST("data/simple.parsed");
@@ -69,7 +71,7 @@ public class ArticleModel implements Serializable {
 		}
 		System.out.println("Building tree");
 
-		VerbParser verbParser = new VerbParser(post, sentencesByVerb, gramDepth);
+		verbParser = new VerbParser(post, sentencesByVerb, gramDepth);
 
 		for (ArrayList<String> article : articles) {
 			ArrayList<String> verbs = verbParser.getArticleSkeleton(article);
@@ -89,20 +91,31 @@ public class ArticleModel implements Serializable {
 		// pw.close();
 		System.out.println("Built tree");
 		wholeArticles = null;
-		articles = null;
-		headlines = null;
+//		articles = null;
+//		headlines = null;
 
 	}
 
 	public String makeArticle(String subject, String verb) {
-
+		ArrayList<String> chosenSentences = getChosenSentences(subject, verb);
+		StringBuilder sb = new StringBuilder();
+		if (chosenSentences != null) {
+			for (String s : chosenSentences) {
+				sb.append(s + "\n");
+			}
+			return sb.toString().replaceAll("<SUBJECT>", subject);
+		}
+		return "";
+	}
+	
+	public ArrayList<String> getChosenSentences(String subject, String verb) {
 		if (!gramRoot.hasChild(verb)) {
-			System.out.println("Going to find a new verb for " + verb);
+//			System.out.println("Going to find a new verb for " + verb);
 			String oldVerb = verb;
 			verb = getNewVerb(verb);
 			if (verb == null) {
-				System.out.println("Could not find a verb that is similar to " + oldVerb);
-				return "";
+//				System.out.println("Could not find a verb that is similar to " + oldVerb);
+				return null;
 			}
 		}
 
@@ -125,7 +138,7 @@ public class ArticleModel implements Serializable {
 					if (curNode == null) {
 						break;
 					}
-					System.out.println(gram);
+//					System.out.println(gram);
 
 				}
 				backoff++;
@@ -143,7 +156,6 @@ public class ArticleModel implements Serializable {
 
 		}
 
-		StringBuilder sb = new StringBuilder();
 		ArrayList<String> choosenSentences = new ArrayList<String>();
 
 		Double addSubjects = 1.0;
@@ -164,11 +176,7 @@ public class ArticleModel implements Serializable {
 				choosenSentences.add(sentence);
 			}
 		}
-		for (String s : choosenSentences) {
-			sb.append(s + "\n");
-		}
-
-		return sb.toString().replaceAll("<SUBJECT>", subject);
+		return choosenSentences;
 	}
 
 	private String getNewVerb(String verb) {
